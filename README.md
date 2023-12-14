@@ -1,4 +1,4 @@
-# podcast-addetection
+# podcast-adetection
 
 This bash script extracts advertisement time stamps from audio files by
 
