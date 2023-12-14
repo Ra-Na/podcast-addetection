@@ -15,7 +15,8 @@ rm linenumbers 2> /dev/null
 ###  Transcribe all mp3 files to text/subtitle files.
 ###  This requires openai-whisper. It can be installed with "python3 -m pip install -U openai-whisper",
 ###  which may download around 3 GB. If the trancription fails with a SHA256-error you may have faulty RAM. 
-# for f in *.mp3;do whisper $f --model small;done
+###  Comment out after first run. when experimenting with
+for f in *.mp3;do whisper $f --model small;done
 
 ###  Now we operate on the transcripts. 
 ###  Sting matching is computationally expensive. We leverage the power of the diff-tool, 
