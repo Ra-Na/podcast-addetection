@@ -8,5 +8,12 @@ This bash script extracts advertisement time stamps from audio files by
 
 ## Requirements
 
-1. openai-whisper and ffmpeg
-2. standard linux bash with sed, awk, diff and the like
+1. Openai-whisper and ffmpeg.
+2. Standard linux bash with sed, awk, diff and the like.
+
+Skim through the comments in the bash script for more info.
+
+## Usage
+
+Store your mp3 files and the script in a common folder and execute the script in a bash inside the folder. 
+
