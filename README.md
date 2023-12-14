@@ -15,5 +15,4 @@ Skim through the comments in the bash script for more info.
 
 ## Usage
 
-Store your mp3 files and the script in a common folder and execute the script in a bash inside the folder. 
-
+Store your mp3 files and the script in the same folder and execute the script in a bash inside the folder. 
