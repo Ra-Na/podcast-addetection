@@ -118,7 +118,7 @@ for f in *.srt;do
 done
 
 
-# Clean up temporary files. Uncomment to debug.
+# Clean up temporary files. Comment to debug.
 rm out* 2> /dev/null
 rm *nl 2> /dev/null
 rm advertisement 2> /dev/null
