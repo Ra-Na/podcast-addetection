@@ -3,20 +3,12 @@
 # control variables (now = number of words)
 now1="8" # Comparing two transcripts, number of consecutive words to mark as ad.
 now2="4" # Comparing ad snippets to transcripts, number of words to mark as ad.
-
-# Clean up
-rm out* 2> /dev/null
-rm *nl 2> /dev/null
-rm advertisement 2> /dev/null
-rm *timestamps* 2> /dev/null
-rm tmp* 2> /dev/null
-rm linenumbers 2> /dev/null
+bridgegap="7" # Join ad intervals that are closer than that many seconds to each other. 
 
 ###  Transcribe all mp3 files to text/subtitle files.
 ###  This requires openai-whisper. It can be installed with "python3 -m pip install -U openai-whisper",
 ###  which may download around 3 GB. If the trancription fails with a SHA256-error you may have faulty RAM. 
-###  Comment out after first run. when experimenting with
-for f in *.mp3;do whisper $f --model small;done
+# for f in *.mp3;do whisper $f --model small;done
 
 ###  Now we operate on the transcripts. 
 ###  Sting matching is computationally expensive. We leverage the power of the diff-tool, 
@@ -113,8 +105,23 @@ for f in *.srt;do
     echo "dummy dummy dummy" >> timestamps_sur 
     # We now join consecutive time intervals.
     awk '{if(prev3==$1){prev2=$2;prev3=$3} else {printf "%s %s %s\n",prev1,prev2,prev3;prev1=$1;prev2=$2;prev3=$3};}' timestamps_sur > tmp4
-    # Remove first empty line and print to transcript_ad_timestamps.txt
-    tail -n +2 "tmp4" > "${f%.*}_ad_timestamps.txt"
+    # Remove first empty line and print to transcript_ad_timestamps.ads
+    tail -n +2 "tmp4" > "${f%.*}_ad_timestamps.ads"
+    # Prepare ads file for next awk algorithm.
+    echo "99:99:99 --> 99:99:99" >> "${f%.*}_ad_timestamps.ads"
+    # Now bridging small gaps. See control variable "bridgegap" at the beginning.
+    cmd=$'awk -F\'[: ]\' \'{if(NR==1){prevendtime=0};currstarttime=3600*int($1)+60*int($2)+int($3);currendtime=3600*int($5)+60*int($6)+int($7);if(currstarttime-prevendtime<'
+    cmd+="$bridgegap"
+    cmd+=$'){prevendtime=currendtime;}else{printf "%02.0f:%02.0f:%02.0f --> %02.0f:%02.0f:%02.0f\\n",int(prevstarttime/3600),int((prevstarttime/60)%60),int(prevstarttime%60),int(prevendtime/3600),int((prevendtime/60)%60),int(prevendtime%60);prevstarttime=3600*int($1)+60*int($2)+int($3);prevendtime=3600*int($5)+60*int($6)+int($7);}}\' '
+    cmd+="${f%.*}_ad_timestamps.ads > ${f%.*}_ad_timestamps_condensed.ads"
+    eval "$cmd"
 done
 
-### We can now continue to process the timestamps, e.g. by joining big blocks which are close to each other and then eliminating small, isolated findings. 
+
+# Clean up temporary files. Uncomment to debug.
+rm out* 2> /dev/null
+rm *nl 2> /dev/null
+rm advertisement 2> /dev/null
+rm timestamps_* 2> /dev/null
+rm tmp* 2> /dev/null
+rm linenumbers 2> /dev/null
