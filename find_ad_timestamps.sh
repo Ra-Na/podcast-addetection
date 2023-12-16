@@ -4,11 +4,12 @@
 now1="8" # Comparing two transcripts, number of consecutive words to mark as ad.
 now2="4" # Comparing ad snippets to transcripts, number of words to mark as ad.
 bridgegap="7" # Join ad intervals that are closer than that many seconds to each other. 
+dropsmallisolatedfindings="10" # Drop isolated detections shorter than that many seconds.
 
 ###  Transcribe all mp3 files to text/subtitle files. It may take some time.
 ###  This requires openai-whisper. It can be installed with "python3 -m pip install -U openai-whisper",
 ###  which may download around 3 GB. If the trancription fails with a SHA256-error you may have faulty RAM. 
-for f in *.mp3;do whisper $f --model small;done
+#for f in *.mp3;do whisper $f --model small;done
 
 ###  Now we operate on the transcripts. 
 ###  Sting matching is computationally expensive. We leverage the power of the diff-tool, 
@@ -107,6 +108,9 @@ for f in *.srt;do
     awk '{if(prev3==$1){prev2=$2;prev3=$3} else {printf "%s %s %s\n",prev1,prev2,prev3;prev1=$1;prev2=$2;prev3=$3};}' timestamps_sur > tmp4
     # Remove first empty line and print to transcript_ad_timestamps.ads
     tail -n +2 "tmp4" > "${f%.*}_ad_timestamps.ads"
+
+    ### The main part is done, the rest is refinement. 
+
     # Prepare ads file for next awk algorithm.
     echo "99:99:99 --> 99:99:99" >> "${f%.*}_ad_timestamps.ads"
     # Now bridging small gaps. See control variable "bridgegap" at the beginning.
@@ -114,6 +118,12 @@ for f in *.srt;do
     cmd+="$bridgegap"
     cmd+=$'){prevendtime=currendtime;}else{printf "%02.0f:%02.0f:%02.0f --> %02.0f:%02.0f:%02.0f\\n",int(prevstarttime/3600),int((prevstarttime/60)%60),int(prevstarttime%60),int(prevendtime/3600),int((prevendtime/60)%60),int(prevendtime%60);prevstarttime=3600*int($1)+60*int($2)+int($3);prevendtime=3600*int($5)+60*int($6)+int($7);}}\' '
     cmd+="${f%.*}_ad_timestamps.ads > ${f%.*}_ad_timestamps_condensed.ads"
+    eval "$cmd"
+    # Now deleting small, isolated ad timestamps, which are likely to be false positives. See control variable "dropsmallisolatedfindings"
+    cmd=$'awk -F\'[: ]\' \'{st=3600*int($1)+60*int($2)+int($3);et=3600*int($5)+60*int($6)+int($7);if((et-st)>'
+    cmd+="$dropsmallisolatedfindings"
+    cmd+=$'){print $0}}\' '
+    cmd+="${f%.*}_ad_timestamps_condensed.ads > ${f%.*}_ad_timestamps_more_condensed.ads"
     eval "$cmd"
 done
 
