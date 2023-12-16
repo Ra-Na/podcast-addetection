@@ -5,17 +5,17 @@ now1="8" # Comparing two transcripts, number of consecutive words to mark as ad.
 now2="4" # Comparing ad snippets to transcripts, number of words to mark as ad.
 bridgegap="7" # Join ad intervals that are closer than that many seconds to each other. 
 
-###  Transcribe all mp3 files to text/subtitle files.
+###  Transcribe all mp3 files to text/subtitle files. It may take some time.
 ###  This requires openai-whisper. It can be installed with "python3 -m pip install -U openai-whisper",
 ###  which may download around 3 GB. If the trancription fails with a SHA256-error you may have faulty RAM. 
-# for f in *.mp3;do whisper $f --model small;done
+for f in *.mp3;do whisper $f --model small;done
 
 ###  Now we operate on the transcripts. 
 ###  Sting matching is computationally expensive. We leverage the power of the diff-tool, 
 ###  which is quite fast. Since diff is line-based, we need to break all words into 
 ###  individual lines, the addendum "nl" means "newline".
 
-echo "Comparing the transcripts to find common blocks which are collected in the file \"advertisement\"."
+echo "Comparing the transcripts to find common blocks."
 for f in *.txt;do
     cat $f | tr " " "\n" > "${f}nl"
 done
@@ -66,7 +66,7 @@ done
 ###  which requires breaking words to individual lines. 
 ###  Instead, you may well use longest common substring algorithms in bash or python, 
 ###  but diff is blazingly fast in comparison.
-echo "Searching for ads:"
+echo "Searching for ads in all transcripts:"
 for f in *.srt;do
     echo "${f%.*}" #  Print name of file to examin.
     sed 's/ --> /-->/' $f | tr " " "\n" > "${f}nl"  # Prepare srt file by removing spaces in timestamps and then breaking at spaces.
